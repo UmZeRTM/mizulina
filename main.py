@@ -14,13 +14,16 @@ def main():
     BLUE = (0, 0, 255)
     BLACK = (0, 0, 0)
 
-    square_x2 = 0
+    square_x2 = 0  # Початкова позиція чорного квадрата
     square_y2 = HEIGHT - square_size
+    direction = 1   # Напрямок руху квадрата (1 - вправо, -1 - вліво)
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
+        # Отримуємо координати миші
         mouse_x, mouse_y = pygame.mouse.get_pos()
         square_x1 = mouse_x - square_size // 2
         square_y1 = mouse_y - square_size // 2
@@ -29,10 +32,13 @@ def main():
         pygame.draw.rect(screen, BLUE, (square_x1, square_y1, square_size, square_size))
         pygame.draw.rect(screen, BLACK, (square_x2, square_y2, square_size, square_size))
 
-        if square_x2 > WIDTH:
-            square_x2 -= STEP
-        else:
-            square_x2 += STEP
+        # Якщо квадрат досягає правого або лівого краю, змінюємо напрямок
+        if square_x2 + square_size >= WIDTH:  # Якщо квадрат досяг правого краю
+            direction = -1  # Змінюємо напрямок на вліво
+        elif square_x2 <= 0:  # Якщо квадрат досяг лівого краю
+            direction = 1  # Змінюємо напрямок на вправо
+
+        square_x2 += direction * STEP  # Переміщаємо квадрат в напрямку
 
         pygame.display.flip()
         clock.tick(60)
