@@ -1,4 +1,13 @@
+from turtledemo.penrose import start
+
 import pygame
+
+
+def background(ground):
+    maze = pygame.image.load(ground).convert()
+    mask = pygame.mask.from_threshold(maze, (0, 0, 0, 255), (1, 1, 1, 255))
+    return maze, mask
+
 
 def main():
     pygame.init()
@@ -8,42 +17,49 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
+    pygame.mixer.init()
+    pygame.mixer.music.load('sound/level_song.mp3')
+    pygame.mixer.music.play(loops=-1, start=0.0)
+
     square_size = 30
     STEP = 5
     WHITE = (255, 255, 255)
     BLUE = (0, 0, 255)
     BLACK = (0, 0, 0)
+    player_img = pygame.image.load('skins/v1_sprite.png')
+    player_img = pygame.transform.scale(player_img, (square_size, square_size))
+    maze, mask = background('grounds/main_ground.png')
 
-    square_x2 = 0  # Початкова позиція чорного квадрата
-    square_y2 = HEIGHT - square_size
-    direction = 1   # Напрямок руху квадрата (1 - вправо, -1 - вліво)
-
+    square_x = 10
+    square_y = 10
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Отримуємо координати миші
+
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        square_x1 = mouse_x - square_size // 2
-        square_y1 = mouse_y - square_size // 2
+        mouse_pressed = pygame.mouse.get_pressed()
 
+
+        if mouse_pressed[0]:
+            square_x = mouse_x - square_size // 2
+            square_y = mouse_y - square_size // 2
+
+
+        square_mask = pygame.Mask((square_size, square_size), fill=True)
+        if mask.overlap(square_mask, (square_x, square_y)) is not None:
+            square_x, square_y = 10, 10
         screen.fill(WHITE)
-        pygame.draw.rect(screen, BLUE, (square_x1, square_y1, square_size, square_size))
-        pygame.draw.rect(screen, BLACK, (square_x2, square_y2, square_size, square_size))
+        screen.blit(maze, (0, 0))
+        screen.blit(player_img, (square_x, square_y))
 
-        # Якщо квадрат досягає правого або лівого краю, змінюємо напрямок
-        if square_x2 + square_size >= WIDTH:  # Якщо квадрат досяг правого краю
-            direction = -1  # Змінюємо напрямок на вліво
-        elif square_x2 <= 0:  # Якщо квадрат досяг лівого краю
-            direction = 1  # Змінюємо напрямок на вправо
-
-        square_x2 += direction * STEP  # Переміщаємо квадрат в напрямку
 
         pygame.display.flip()
         clock.tick(60)
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
