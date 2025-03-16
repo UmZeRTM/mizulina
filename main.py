@@ -1,10 +1,10 @@
 import pygame
+from random import uniform, randint
 
 
-def background(ground):
-    maze = pygame.image.load(ground).convert()
-    mask = pygame.mask.from_threshold(maze, (0, 0, 0, 255), (1, 1, 1, 255))
-    return maze, mask
+def background():
+    maze = pygame.image.load('grounds/space.jpg').convert()
+    return maze
 
 
 def play_music(track):
@@ -21,69 +21,83 @@ def main():
     running = True
 
     pygame.mixer.init()
+    play_music('sound/level_song.mp3')
 
-
-    level_songs = ['sound/level_song.mp3', 'sound/lvl_2.mp3', 'sound/lvl_3.mp3']
-    curent_maze_index = 0
-    play_music(level_songs[curent_maze_index])
-
-
-    finish_sound = pygame.mixer.Sound('sound/complete.mp3')
-
-    square_size = 20
+    square_size = 50
     WHITE = (255, 255, 255)
-    GREEN = (0, 255, 0)
+    bullet = pygame.Surface((5, 10))
+    bullet.fill((255, 0, 0))
+
+    bullet_list = []
+    bullet_speed = 5
+
+    num_enemies = 7
+    enemies_list = []
+    for _ in range(num_enemies):
+        enemies_list.append([randint(0, WIDTH - 50), randint(-100, -40), uniform(0.3, 0.5)])
+
+
+    score = 0
+    missed = 0
+
+    enemy_image = pygame.image.load('skins/enemy.png')
     player_img = pygame.image.load('skins/v1_sprite.png')
     player_img = pygame.transform.scale(player_img, (square_size, square_size))
 
-    maze_paths = ['grounds/main_ground.png', 'grounds/maze_image.png', 'grounds/new_maze_image.png']
-    maze, mask = background(maze_paths[curent_maze_index])
+    background_img = background()
 
-    square_x = 10
-    square_y = 10
+    square_x, square_y = 30, 30
 
-    green_square_size = 30
-    green_square_x = 750
-    green_square_y = 550
+    font = pygame.font.Font(None, 36)
+    start_time = pygame.time.get_ticks()
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    bullet_list.append([square_x, square_y])
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
         mouse_pressed = pygame.mouse.get_pressed()
 
-        if mouse_pressed[0]:
+        if mouse_pressed[2]:
             square_x = mouse_x - square_size // 2
             square_y = mouse_y - square_size // 2
 
-        square_mask = pygame.Mask((square_size, square_size), fill=True)
-        if mask.overlap(square_mask, (square_x, square_y)) is not None:
-            square_x, square_y = 10, 10
+        for enemy in enemies_list:
+            enemy[1] += enemy[2]
+            if enemy[1] > HEIGHT:
+                missed += 1
+                enemy[0] = randint(0, HEIGHT - 50)
+                enemy[1] = randint(-100, HEIGHT -40)
+                enemy[2] = uniform(0.3, 0.5)
 
 
-        player_rect = pygame.Rect(square_x, square_y, square_size, square_size)
-        green_square_rect = pygame.Rect(green_square_x, green_square_y, green_square_size, green_square_size)
-        if player_rect.colliderect(green_square_rect):
-            finish_sound.play()
-            pygame.time.delay(1000)
+        new_bullet = []
+        for bull in bullet_list:
+            bull[1] -= bullet_speed
+            if bull[1] > 0:
+                new_bullet.append(bull)
+        bullet_list = new_bullet
 
-            screen.fill('white')
-            screen.blit(maze, (0, 0))
-            if curent_maze_index < len(maze_paths) - 1:
-                curent_maze_index += 1
-                maze, mask = background(maze_paths[curent_maze_index])
-                square_x = 20
-                square_y = 20
-                green_square_x = 730
-                green_square_y = 530
-                play_music(level_songs[curent_maze_index])
 
-        screen.fill(WHITE)
-        screen.blit(maze, (0, 0))
+        past_time = (pygame.time.get_ticks() - start_time) // 1000
+        timer_text = font.render(f"{past_time} sec", True, WHITE)
+
+        screen.blit(background_img, (0, 0))
+
         screen.blit(player_img, (square_x, square_y))
-        pygame.draw.rect(screen, GREEN, (green_square_x, green_square_y, green_square_size, green_square_size))
+
+        screen.blit(timer_text, (10, 10))
+
+        for enemy in enemies_list:
+            screen.blit(enemy_image, (enemy[0], enemy[1]))
+
+        for bull in bullet_list:
+            screen.blit(bullet, (bull[0], bull[1]))
+
 
         pygame.display.flip()
         clock.tick(60)
